@@ -1,0 +1,56 @@
+version: '3'
+
+services:
+  db:
+    build: ./db
+    image: basedonne
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: test
+    restart: always
+    volumes:
+      - mysqldb_data:/var/lib/mysql
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    restart: always
+    ports:
+      - '8080:80'
+    depends_on:
+      - db
+
+  server:
+    image: server
+    build:
+      context: ./server
+      dockerfile: dockerfile
+    container_name: ${SERVER_HOST}
+    env_file: .env
+    ports:
+      - ${SERVER_PORT}:${SERVER_PORT}
+    depends_on:
+      - db
+
+  nginx:
+    image: reverse-proxy
+    restart: always
+    build:
+      context: ./nginx
+      dockerfile: dockerfile
+    container_name: ${NGINX_HOST}
+    env_file: .env
+    ports:
+      - ${NGINX_PORT}:${NGINX_PORT}
+    depends_on:
+      - server
+  frontend:
+    build: ./frontend
+    ports:
+      - "8000:80"
+    depends_on:
+      - server
+    restart: on-failure
+volumes:
+  mysqldb_data:    
+
+
+ 
